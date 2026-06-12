@@ -88,15 +88,17 @@ saved and survive restarts and reboots.
 
 ## 5. What actually happens when you hit your limit
 
-1. The agent quietly watches for `VALORANT-Win64-Shipping.exe` — the file that
-   runs only during an actual match.
-2. A match counts when that file closes and stays closed for 70 seconds. (The
-   70s window absorbs the brief restart between agent-select and the map
-   loading, so one match always counts as exactly one.)
+1. The agent tails Valorant's own game log
+   (`%LOCALAPPDATA%\VALORANT\Saved\Logs\ShooterGame.log`) for the lines the
+   game writes when a match begins and ends. This works per-match — going back
+   to the lobby between games still counts as one game finished.
+2. After a match-end line appears, a 70-second grace window runs. If nothing
+   contradicts it in that window, the match counts. (Quitting Valorant entirely
+   is not required — the count ticks up while you're still in the client.)
 3. On your last allowed game, the agent closes all Valorant/Riot processes and
    adds an outbound firewall block aimed at the game file.
-4. Valorant can still *open*, but it can't reach Riot's servers — it errors out
-   at the login/connect screen.
+4. Valorant can still *open*, but it can't reach Riot's servers — it hangs on
+   the loading/auth screen until the cooldown lifts.
 5. When the cooldown ends, the block is removed automatically and your counter
    resets to zero. (The counter only resets after a full cooldown — never at
    midnight, never early.)
@@ -135,5 +137,10 @@ The point is to make *quitting* the default — not to make playing impossible.
   it — on its next launch. So if a block outlived the app, just start the agent
   again and it lifts the expired block on startup. (Auto-start on boot is a
   planned v2 feature; for now you launch it yourself.)
+- **Relaunching Valorant while blocked just hangs at the loading screen** —
+  that's the firewall rule doing its job: the client opens but can't reach
+  Riot's servers, so login never completes. Killing the agent's tray process
+  doesn't free you either; the rule lives in Windows Firewall, not in the
+  agent. To get back in early you have to delete the rule manually (see §7).
 - Closing Valorant yourself between games is totally fine — the count is based on
   matches actually played, not on how long the launcher is open.

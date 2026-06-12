@@ -36,16 +36,34 @@ KILL_PROCESS_NAMES = (
     "RiotClientUxRender.exe",
 )
 
+# --- Match detection (log tailing) ---------------------------------------
+
+# We detect matches by tailing VALORANT's game log, not by watching the
+# binary. The binary stays alive for the whole client session (lobby +
+# matches), so its exit signals "user quit Valorant", not "match ended".
+LOG_RELATIVE_PATH = r"VALORANT\Saved\Logs\ShooterGame.log"
+
+
+def log_file_path() -> str:
+    base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+    return os.path.join(base, LOG_RELATIVE_PATH)
+
+
+# Substrings scanned per new log line. Both are stable across Valorant's
+# game modes (deathmatch, competitive, swiftplay, etc).
+LOG_MATCH_START_MARKER = "[Match Setup: TRUE | Changed: TRUE]"
+LOG_MATCH_END_MARKER = "LogShooterGameState: Match Ended:"
+
 # --- Timing ---------------------------------------------------------------
 
-# Grace window: the binary briefly restarts during agent-select -> map-load.
-# 70s safely absorbs that flicker so one match never counts as two.
+# Grace window after Match Ended fires. Keeps a single match from being
+# counted twice if the log somehow emits the line more than once, and gives
+# the user a moment of "buffer" before the count actually increments.
 GRACE_SECONDS = 70
 
-# Poll cadence. Slower while a match is running (we only need to notice the
-# binary disappear), faster while idle/in-grace for responsiveness.
+# Poll cadence for the log tail.
 POLL_IDLE_SECONDS = 5
-POLL_RUNNING_SECONDS = 10
+POLL_RUNNING_SECONDS = 5
 
 # --- Defaults (seed values for a fresh state.json) ------------------------
 
