@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local state / logs (runtime, machine-specific)
+state.json
+agent.log
+
+# Local-only planning docs — kept on disk, intentionally not committed
+PRD.md
+TRACKING.md
+
+# OS
+.DS_Store
+Thumbs.db
